@@ -23,6 +23,7 @@ import {
   Delete,
   Github,
 } from "lucide-react";
+import { charMap, removeSet } from "@/lib/utils";
 
 export default function TextProcessor() {
   const [inputText, setInputText] = useState("");
@@ -51,26 +52,36 @@ export default function TextProcessor() {
       return;
     }
 
-    const invisibles = new Set(["\u200B", "\u200C", "\u200D"]);
+    let diff = 0;
 
-    // Split the string into Unicode characters
+    const normalized = [...inputText]
+      .map((char) => {
+        if (removeSet.has(char)) {
+          diff++;
+          return "";
+        } else if (charMap[char]) {
+          diff++;
+          return charMap[char];
+        }
+        return char;
+      })
+      .join("");
 
-    // Filter out invisibles
-    const filtered = inputText.split("").filter((c) => !invisibles.has(c));
+    // OPTIONAL: Keyboard-only filter (ASCII + emoji)
+    // Uncomment if desired
+    // const keyboardOnly = normalized.replace(/[^\x20-\x7E\u{1F000}-\u{1FAFF}]/gu, "");
 
-    setProcessedText(filtered.join(""));
+    setProcessedText(normalized);
 
-    // Calculate statistics
     const characters = inputText.length;
-    const words = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
-    const sentences = inputText
+    const words = normalized.trim() ? normalized.trim().split(/\s+/).length : 0;
+    const sentences = normalized
       .split(/[.!?]+/)
       .filter((s) => s.trim().length > 0).length;
-    const paragraphs = inputText
+    const paragraphs = normalized
       .split(/\n\s*\n/)
       .filter((p) => p.trim().length > 0).length;
-    const readingTime = Math.ceil(words / 200); // Average reading speed
-    const diff = inputText.length - filtered.length;
+    const readingTime = Math.ceil(words / 200);
 
     setStats({ characters, words, sentences, paragraphs, readingTime, diff });
   };
